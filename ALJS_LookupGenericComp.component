@@ -1,0 +1,121 @@
+<apex:component controller="GenericInputFieldController">
+     
+    <apex:attribute name="strVariable"  type="String" description="selectedId"/>
+    <apex:attribute name="strSelectedValue" type="String" description="selectedValue"/>
+    <apex:attribute name="fieldLabel" description="" type="String" />
+    <apex:attribute name="objectLabel" description="" type="String" />
+    <apex:attribute name="lookUpId" description="" type="String" />
+    <apex:attribute name="sObjectName" required="true" description="" type="string" assignTo="{!object_name}" />
+    <apex:attribute name="lookupIconName" description="" type="string" />
+    <apex:attribute name="isReadonly" required="true" description="" type="Boolean" />
+    <apex:attribute name="detailObjId" description="" type="String" />
+    <apex:attribute name="sojectInst" description="" type="Sobject" />
+    <apex:attribute name="onchangeFunction" description="" type="String" />
+    <apex:attribute name="helpText" description="helpText" type="String" />
+    <div id="{!lookUpId}Container"/> 
+    
+    <!--<apex:actionFunction name="assignValue" action="{!assignHidden}" rerender="dummy" oncomplete="console.log('==oncomplete==value==={!inputValue}')">
+        <apex:param name="pickValAssign" value="" assignTo="{!sojectInst[field_name]}"/>
+    </apex:actionFunction>  -->
+    <script>
+        var j$ = jQuery.noConflict();
+        window['{!lookUpId}Load'] = true; 
+        j$(document).ready(function() {
+            var isReadonly = '{!isReadOnly}';
+            var detailObjId = '{!detailObjId}';
+            var lookupHTML = '';
+            console.log('={!lookUpId}=isReadonly===',isReadonly,'===detailObjId===',detailObjId);
+            if(isReadonly == 'true' && detailObjId != null && detailObjId.length > 0)
+            {
+                lookupHTML += '<div class="slds-form-element slds-m-top--medium large">';
+                  lookupHTML += '<label class="slds-form-element__label" for="{!lookUpId}">{!fieldLabel}</label>';
+                                 lookupHTML += ' <div class="slds-form-element__control">';
+                                   lookupHTML += " <span>{!strSelectedValue}<span/>";
+                                  lookupHTML += '</div>';
+                                lookupHTML += '</div>';
+                lookupHTML += '<input type="hidden" id="search{!lookUpId}" value="{!strVariable}"/>';
+                j$("#{!lookUpId}Container" ).html(lookupHTML); 
+            
+            }
+            else
+            {
+                lookupHTML += '<div class=" slds-form-element slds-lookup" data-select="single" data-scope="single">';
+                    lookupHTML += '<label class="slds-form-element__label" for="{!lookUpId}">{!fieldLabel}</label>';
+                    
+                    if('{!helpText}' != null && '{!helpText}' != "")
+                    {
+                        lookupHTML += '<div class="slds-form-element tooltip">';
+                        lookupHTML += '<div class="slds-form-element__icon slds-align-middle iconFix">';
+                        lookupHTML += '<button class="slds-button slds-button slds-button--icon" aria-describedby="help" title="Help">';
+                          lookupHTML += '<svg aria-hidden="true" class="slds-button__icon">';
+                            lookupHTML += '<use href="{!URLFOR($Resource.slds_214, '/assets/icons/utility-sprite/svg/symbols.svg#info')}"></use>';
+                          lookupHTML += '</svg>';
+                          lookupHTML += '<span class="slds-assistive-text">Help</span>';
+                        lookupHTML += '</button>';
+                      lookupHTML += '</div>';
+                      lookupHTML += '<div class="slds-popover slds-popover--tooltip slds-nubbin--left-top tooltiptext" role="tooltip" id="help" >';
+                          lookupHTML += '<div class="slds-popover__body">{!$ObjectType.Member_Role_Application__c.fields.Create_HouseHold_Members__c.inlineHelpText}</div>';
+                        lookupHTML += '</div>';
+                    lookupHTML += '</div>';
+                    }
+                    
+              
+            
+                    lookupHTML += '<div class="slds-form-element__control slds-input-has-icon slds-input-has-icon--right">';
+                       lookupHTML += '<svg aria-hidden="true" class="slds-input__icon">'
+                            lookupHTML += '<use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="{!URLFOR($Resource.SLDS, '/assets/icons/utility-sprite/svg/symbols.svg#search')}"></use>';
+                        lookupHTML += '</svg>';
+                        lookupHTML += '<input id="{!lookUpId}" class="slds-input" type="text" placeholder="Click to View {!objectLabel} Options" aria-autocomplete="list" role="combobox" aria-expanded="true" aria-activedescendant=""/>';
+                    lookupHTML += '</div>';
+                lookupHTML += '</div>';
+                lookupHTML += '<input type="hidden" id="search{!lookUpId}" value="{!strVariable}"/>';
+                j$("#{!lookUpId}Container" ).html(lookupHTML); 
+                var sObjName = '{!sObjectName}'.toLowerCase();
+                console.log('&&&&&&',sObjName);
+                var imgIconName = '{!lookupIconName}'.toLowerCase();
+                console.log('*****','{!lookupIconName}');
+                var iconUrl ;
+                if(imgIconName.includes('custom')){
+                    iconUrl = '{!URLFOR($Resource.SLDS, '/assets/icons/custom-sprite/svg/symbols.svg#')}'+imgIconName ;
+                }else{
+                    iconUrl = '{!URLFOR($Resource.SLDS, '/assets/icons/standard-sprite/svg/symbols.svg#')}'+imgIconName ;
+                }
+                
+                
+                j$('#{!lookUpId}').lookup({
+                
+                    items:{!autoCompleteArray},
+                    objectIconUrl: iconUrl ,
+                    showSearch: true,
+                    onChange: function(rec) {
+                        
+                        if(rec != null){
+                             
+                            j$('[id$=search{!lookUpId}]').val(rec.id); 
+                        }else{
+                             
+                            j$('[id$=search{!lookUpId}]').val(''); 
+                        }
+                        
+                       
+                       if("{!onchangeFunction}" != null && "{!onchangeFunction}" != '' && "{!onchangeFunction}".length >0 && window['{!lookUpId}Load'] == false){
+                            {!onchangeFunction}
+                        }
+                        window['{!lookUpId}Load'] = false;
+                    }
+                });
+                var selectedVal ="{!strSelectedValue}";
+                selectedVal = selectedVal.trim();
+                console.log('==Test==2=selectedVal=',selectedVal,'====');
+                console.log('==Test==2=selectedVal=',selectedVal.length,'====');
+                if(selectedVal != null && selectedVal.length > 0 && selectedVal != ''){
+                    console.log('==Test=');
+                    j$('#{!lookUpId}').lookup('setSelection', { id: '{!strVariable}', label: "{!strSelectedValue}" });
+                }else
+                {
+                    window['{!lookUpId}Load'] = false;
+                }
+            }
+        });
+    </script>
+</apex:component>

@@ -1,0 +1,178 @@
+<apex:component controller="GenericInputFieldController">
+    
+    <apex:attribute name="sObjectType" description="sobject Instance" type="sObject" assignTo="{!sObjectInstance}" required="true"/>
+    <apex:attribute name="fieldName" description="sObject field to show" type="String" assignTo="{!field_name}" required="true"/>
+    <apex:attribute name="elementId" description="Element Id to be used to fetch values" type="String" required="true"/>
+    <apex:attribute name="displayLabel" description="Label to be displayed on field " type="String" />
+    <apex:attribute name="isRequired" description="Required or not" type="Boolean" />
+    <apex:attribute name="onchangeFunction" description="" type="String" />
+    <apex:attribute name="onblurFunction" description="" type="String" />
+    <apex:attribute name="helpText" description="helpText" type="String" />
+    <apex:attribute name="objectLabel" description="objectLabel" type="String" />
+    
+    <apex:outputPanel >
+        <!-- Render Lookup Field -->
+        <apex:outputPanel layout="block" styleClass="slds-form-element" id="divTextLookup" rendered="{!isLookup}">  
+        <c:ALJS_LookupGenericComp fieldLabel="{!displayLabel}" lookUpId="{!elementId}" sObjectName="{!lookupReferenceObjectName}" 
+                                        lookupIconName="{!lookupReferenceIconName}" 
+                                        strVariable="{!sObjectType[fieldName]}" strSelectedValue="{!strSelectedValue}"
+                                        isReadOnly="{!isReadOnly}"
+                                        detailObjId="{!sObjectType['id']}"
+                                        onchangeFunction="{!onchangeFunction}"
+                                        helpText="{!helpText}"
+                                        objectLabel="{!objectLabel}"/>        
+        </apex:outputPanel>
+    
+        <!-- Render Datepicker Field -->    
+        <apex:outputPanel layout="block" styleClass="slds-form-element" id="divTextDate" rendered="{!isDatetime}">    
+            <c:ALJS_DateGenericComp fieldLabel="{!displayLabel}" dateInputId="{!elementId}" defaultDate="{!sObjectType[fieldName]}" onchangeFunction="{!onchangeFunction}"/>
+        </apex:outputPanel>
+        
+        <!-- Render Picklist Field -->
+        <apex:outputPanel layout="block" styleClass="slds-form-element" id="divPicklist" rendered="{!isPicklist}">    
+            <c:ALJS_PicklistGenericComp fieldLabel="{!displayLabel}" picklistId="{!elementId}" sObjectName="{!object_name}" fieldApiName="{!fieldName}" defaultPicklistValue="{!sObjectType[fieldName]}"/>
+        </apex:outputPanel>
+         
+        <!-- Render MultiplePicklist Field -->
+        <apex:outputPanel layout="block" styleClass="slds-form-element" id="divMultiSelectPicklist" rendered="{!isMultiPicklist}">
+            <c:ALJS_MultiselectGenericComp fieldLabel="{!displayLabel}" multiSelectPicklistId="{!elementId}" sObjectName="{!object_name}" fieldApiName="{!fieldName}" SelectedValue="{!sObjectType[fieldName]}"/>
+        </apex:outputPanel>
+        
+        <!-- Render Input Field -->
+        <!--<apex:form >-->
+            <apex:outputPanel layout="block" styleClass="slds-form-element" id="divTextInput" rendered="{!isInput}"><!--{!IF(NOT(ISBLANK(displayLabel)),displayLabel,$ObjectType[object_name].Fields[fieldName].Label)}-->
+                <label class="slds-form-element__label" for="txtInput">{!displayLabel}</label>
+                <span class="required" style="display:{!IF(isRequired, 'block','none')}">*</span>
+                <div class="slds-form-element tooltip" style="display:{!IF(ISBLANK(helpText),'none','inline')}">
+              <div class="slds-form-element__icon slds-align-middle iconFix">
+                <button class="slds-button slds-button slds-button--icon" aria-describedby="help" title="Help">
+                  <svg aria-hidden="true" class="slds-button__icon">
+                    <use href="{!URLFOR($Resource.slds_214, '/assets/icons/utility-sprite/svg/symbols.svg#info')}"></use>
+                  </svg>
+                  <span class="slds-assistive-text">Help</span>
+                </button>
+              </div>
+              <div class="slds-popover slds-popover--tooltip slds-nubbin--left-top tooltiptext" role="tooltip" id="help" ><!-- style="position:absolute;top:0px;left:15px;"--> 
+                  <div class="slds-popover__body">{!helpText}</div>
+                </div>
+                </div>
+                <div class="slds-form-element__control">
+                    <apex:inputField id="txtInput" value="{!sObjectInstance[fieldName]}" styleClass="slds-input {!elementId}" required="{!isRequired != null && isRequired}"></apex:inputField>
+                </div>
+            </apex:outputPanel>
+        
+            <!-- Render Textarea Field -->
+            <apex:outputPanel layout="block" styleClass="slds-form-element" id="divTextArea" rendered="{!isTextarea}">
+                <label class="slds-form-element__label" for="txtArea">{!displayLabel}</label>
+                <div class="slds-form-element__control">
+                    <apex:inputField id="txtArea" value="{!sObjectInstance[fieldName]}" styleClass="slds-textarea {!elementId}" ></apex:inputField>
+                </div>
+            </apex:outputPanel>
+        
+            <!-- Render Checkbox Field -->
+            <apex:outputPanel layout="block" styleClass="slds-form-element" id="divCheckbox" rendered="{!isCheckbox}">
+                <label class="slds-checkbox" for="{!$Component.checkBox}">
+                    <apex:inputField id="checkBox" value="{!sObjectInstance[fieldName]}" styleClass="{!elementId}"></apex:inputField>
+                    <span class="slds-checkbox--faux"></span>
+                    <span class="slds-form-element__label">{!displayLabel}</span>
+                </label>
+            </apex:outputPanel>
+        <!--</apex:form>-->
+    </apex:outputPanel>
+    
+    <script>
+        var j$ = jQuery.noConflict();
+        var assets = '{!URLFOR($Resource.SLDS)}';
+          
+        //ALJS Initialization   
+        j$.aljsInit({
+          assetsLocation: assets,
+          scoped: true
+        });
+        
+        j$(document).ready(function() {
+            var isPercent = '{!isPercent}' == 'true' ? true : false;
+            var isCurrency = '{!isCurrency}' == 'true' ? true : false;
+            
+            if(isPercent || isCurrency)
+            {
+                var elementVal = j$(".{!elementId}").val();
+                if(elementVal != "" && elementVal != undefined)
+                {
+                    if(!elementVal.includes('$')){
+                        elementVal = isPercent ? (elementVal + "%") : ("$" + elementVal);
+                    }
+                    j$(".{!elementId}").val(elementVal);
+                }
+                
+                j$(".{!elementId}").focus(function(){
+                    this.value = this.value.replace(/,/g, '');
+                    this.value = this.value.replace(/\%/g, '');
+                    this.value = this.value.replace(/\\$/g, '');
+                }); 
+                
+                j$(".{!elementId}").blur(function(){ 
+                    if (this.value != "")
+                    {
+                        var amt = parseFloat(this.value);
+                        this.value = amt.toFixed(2);
+                        this.value =  isPercent ? (this.value + "%") : ("$" + this.value);
+                    }
+                    if("{!onblurFunction}" != null && "{!onblurFunction}" != undefined && "{!onblurFunction}".length != 0)
+                    {
+                        {!onblurFunction}
+                    }
+                });
+                
+                j$(".{!elementId}").change(function(){ 
+                    console.log('==change1111=');
+                    if("{!onchangeFunction}" != null && "{!onchangeFunction}" != undefined && "{!onchangeFunction}".length != 0)
+                    {
+                        console.log('==change==called===');
+                        {!onchangeFunction}
+                    }
+                });
+                
+                j$('.{!elementId}').keypress(function (e) {
+                    var str = String.fromCharCode(!e.charCode ? e.which : e.charCode);
+                    str = j$('.{!elementId}').val() + str;
+                    
+                    if (!isNaN(str)) {
+                        return true;
+                    }
+                    e.preventDefault();
+                    return false;
+                });
+            }
+            if('{!isNumber}' == 'true')
+            {
+                j$('.{!elementId}').keypress(function (e) {
+                    var str = String.fromCharCode(!e.charCode ? e.which : e.charCode);
+                    str = j$('.{!elementId}').val() + str;
+                    str = str.replace(/,/g, '');
+                    if (!isNaN(str)) {
+                        return true;
+                    }
+                    e.preventDefault();
+                    return false;
+                });
+                j$(".{!elementId}").blur(function(){ 
+                    console.log('===blurr===');
+                    if("{!onblurFunction}" != null && "{!onblurFunction}" != undefined && "{!onblurFunction}".length != 0)
+                    {
+                        {!onblurFunction}
+                    }
+                });
+                
+                j$(".{!elementId}").change(function(){ 
+                    console.log('==change1111=');
+                    if("{!onchangeFunction}" != null && "{!onchangeFunction}" != undefined && "{!onchangeFunction}".length != 0)
+                    {
+                        console.log('==change==called===');
+                        {!onchangeFunction}
+                    }
+                });
+            }
+        });
+    </script>
+</apex:component>
